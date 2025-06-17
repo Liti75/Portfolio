@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tic Tac Toe</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    #gameContainer {
+      max-width: 600px;
+      width: 100%;
+      background-color: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+    .board {
+      display: grid;
+      gap: 5px;
+    }
+    .cell {
+      width: 100%;
+      aspect-ratio: 1;
+      font-size: 2rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 2px solid #333;
+      background-color: #e0e0e0;
+      user-select: none;
+    }
+    .settings-section {
+      margin-bottom: 20px;
+    }
+    .cell.winning {
+      background-color: pink !important;
+    }
+  </style>
+</head>
+<body>
+
+<div class="d-flex justify-content-center align-items-center vh-100">
+  <div id="gameContainer">
+    <h2 class="text-center mb-4">Tic Tac Toe</h2>
+
+    <div class="settings-section">
+      <div class="mb-2">
+        <label for="playerX" class="form-label">Player X Name</label>
+        <input type="text" id="playerX" class="form-control" placeholder="Player X">
+      </div>
+      <div class="mb-2" id="playerOSection">
+        <label for="playerO" class="form-label">Player O Name</label>
+        <input type="text" id="playerO" class="form-control" placeholder="Player O">
+      </div>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="singlePlayerToggle">
+        <label class="form-check-label" for="singlePlayerToggle">Single Player Mode</label>
+      </div>
+      <div class="mb-2">
+        <label for="gridSize" class="form-label">Grid Size</label>
+        <select id="gridSize" class="form-select">
+          <option value="3">3x3</option>
+          <option value="4">4x4</option>
+          <option value="5">5x5</option>
+        </select>
+      </div>
+      <div class="mb-2">
+        <label for="bgColor" class="form-label">Background Color</label>
+        <input type="color" id="bgColor" class="form-control form-control-color">
+      </div>
+      <button class="btn btn-primary w-100" onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="gameArea" style="display:none;">
+      <div id="scoreBoard" class="mb-3 text-center fw-bold"></div>
+      <div id="board" class="board"></div>
+      <div class="d-flex justify-content-between mt-3">
+        <button class="btn btn-secondary" onclick="resetBoard()">Reset</button>
+        <button class="btn btn-danger" onclick="restartMatch()">Restart Match</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let boardEl = document.getElementById('board');
+  let gridSize = 3;
+  let cells = [];
+  let currentPlayer = 'X';
+  let singlePlayer = false;
+  let gameEnded = false;
+  let score = { X: 0, O: 0, Draw: 0 };
+  let playerX = 'Player X';
+  let playerO = 'Player O';
+
+  document.getElementById('singlePlayerToggle').addEventListener('change', (e) => {
+    document.getElementById('playerOSection').style.display = e.target.checked ? 'none' : 'block';
+  });
+
+  function startGame() {
+    playerX = document.getElementById('playerX').value || 'Player X';
+    singlePlayer = document.getElementById('singlePlayerToggle').checked;
+    playerO = singlePlayer ? 'Computer' : (document.getElementById('playerO').value || 'Player O');
+    gridSize = parseInt(document.getElementById('gridSize').value);
+    document.body.style.backgroundColor = document.getElementById('bgColor').value;
+
+    document.querySelector('.settings-section').style.display = 'none';
+    document.getElementById('gameArea').style.display = 'block';
+    buildBoard();
+    updateScore();
+  }
+
+  function buildBoard() {
+    boardEl.innerHTML = '';
+    boardEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+    cells = [];
+    for (let i = 0; i < gridSize * gridSize; i++) {
+      let cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.addEventListener('click', () => handleMove(i));
+      boardEl.appendChild(cell);
+      cells.push(cell);
+    }
+    currentPlayer = 'X';
+    gameEnded = false;
+  }
+
+  function handleMove(index) {
+    if (gameEnded || cells[index].textContent !== '') return;
+    cells[index].textContent = currentPlayer;
+    checkGameStatus();
+    if (!gameEnded && singlePlayer && currentPlayer === 'X') {
+      currentPlayer = 'O';
+      setTimeout(makeAIMove, 300);
+    } else if (!gameEnded) {
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    }
+  }
+
+  function makeAIMove() {
+    let empty = cells.map((c, i) => c.textContent === '' ? i : null).filter(i => i !== null);
+    if (empty.length > 0) {
+      let move = empty[Math.floor(Math.random() * empty.length)];
+      cells[move].textContent = 'O';
+      checkGameStatus();
+      currentPlayer = 'X';
+    }
+  }
+
+  function checkGameStatus() {
+    if (checkWinner('X')) {
+      alert(`${playerX} wins!`);
+      score.X++;
+      gameEnded = true;
+    } else if (checkWinner('O')) {
+      alert(`${playerO} wins!`);
+      score.O++;
+      gameEnded = true;
+    } else if (cells.every(cell => cell.textContent !== '')) {
+      alert(`It's a draw!`);
+      score.Draw++;
+      gameEnded = true;
+    }
+    updateScore();
+  }
+
+  function updateScore() {
+    document.getElementById('scoreBoard').textContent = `${playerX} (X): ${score.X} | ${playerO} (O): ${score.O} | Draws: ${score.Draw}`;
+  }
+
+  function resetBoard() {
+    cells.forEach(c => {
+      c.textContent = '';
+      c.classList.remove('winning');
+    });
+    currentPlayer = 'X';
+    gameEnded = false;
+  }
+
+  function restartMatch() {
+    score = { X: 0, O: 0, Draw: 0 };
+    updateScore();
+    resetBoard();
+  }
+
+  function checkWinner(symbol) {
+    // Rows and columns
+    for (let i = 0; i < gridSize; i++) {
+      if (cells.slice(i * gridSize, (i + 1) * gridSize).every(c => c.textContent === symbol)) {
+        cells.slice(i * gridSize, (i + 1) * gridSize).forEach(c => c.classList.add('winning'));
+        return true;
+      }
+      let col = [];
+      for (let j = 0; j < gridSize; j++) col.push(cells[j * gridSize + i]);
+      if (col.every(c => c.textContent === symbol)) {
+        col.forEach(c => c.classList.add('winning'));
+        return true;
+      }
+    }
+
+    // Diagonals
+    let diag1 = [], diag2 = [];
+    for (let i = 0; i < gridSize; i++) {
+      diag1.push(cells[i * gridSize + i]);
+      diag2.push(cells[i * gridSize + (gridSize - 1 - i)]);
+    }
+    if (diag1.every(c => c.textContent === symbol)) {
+      diag1.forEach(c => c.classList.add('winning'));
+      return true;
+    }
+    if (diag2.every(c => c.textContent === symbol)) {
+      diag2.forEach(c => c.classList.add('winning'));
+      return true;
+    }
+
+    return false;
+  }
+</script>
+
+</body>
+</html>
