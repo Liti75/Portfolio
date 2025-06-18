@@ -21,3 +21,6 @@ toggleBtn.addEventListener("click", () => {
 document.getElementById("darkModeToggle").addEventListener("click", function () {
   document.body.classList.toggle("dark-mode");
 });
+document.getElementById("themeToggle").addEventListener("click", function () {
+  document.body.classList.toggle("dark-mode");
+});
